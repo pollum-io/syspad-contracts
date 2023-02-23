@@ -43,7 +43,7 @@ abstract contract TierSystem is Ownable {
     }
 
     function addToWhitelist(address _address) external onlyOwner {
-        require(_address != address(0), "TierSystem::invalid wallet");
+        require(_address != address(0), "TierSystem::INVALID_WALLET");
         whitelist[_address] = true;
         emit AddedToWhitelist(_address);
     }
@@ -58,7 +58,7 @@ abstract contract TierSystem is Ownable {
     }
 
     function removeFromWhitelist(address _address) external onlyOwner {
-        require(_address != address(0), "TierSystem::invalid wallet");
+        require(_address != address(0), "TierSystem::INVALID_WALLET");
         whitelist[_address] = false;
         emit RemovedFromWhitelist(_address);
     }
@@ -77,7 +77,7 @@ abstract contract TierSystem is Ownable {
     }
 
     function getTier(address _address) external view returns (uint256) {
-        require(isWhitelisted(_address), "TierSystem:: not whitelisted");
+        require(isWhitelisted(_address), "TierSystem::NOT_WHITELISTED");
 
         uint256 balance = stakingRewards.balanceOf(_address);
 
@@ -98,7 +98,7 @@ abstract contract TierSystem is Ownable {
         address _address,
         uint256 _timepoint
     ) external view returns (uint256) {
-        require(isWhitelisted(_address), "TierSystem:: not whitelisted");
+        require(isWhitelisted(_address), "TierSystem::NOT_WHITELISTED");
         uint256 balance = stakingRewards.balanceOfAt(_address, _timepoint);
         if (balance >= tier4) {
             return 4;

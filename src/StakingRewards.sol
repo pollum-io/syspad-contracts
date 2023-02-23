@@ -111,7 +111,7 @@ contract StakingRewards is Ownable {
      * @param _amount The amount of tokens to stake.
      */
     function stake(uint256 _amount) external updateReward(msg.sender) {
-        require(_amount > 0, "amount = 0");
+        require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
         totalSupply += _amount;
@@ -123,7 +123,7 @@ contract StakingRewards is Ownable {
      * @param _amount The amount of tokens to withdraw.
      */
     function withdraw(uint256 _amount) external updateReward(msg.sender) {
-        require(_amount > 0, "amount = 0");
+        require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
         balanceOf[msg.sender] -= _amount;
         totalSupply -= _amount;
         stakingToken.transfer(msg.sender, _amount);
@@ -173,11 +173,11 @@ contract StakingRewards is Ownable {
             uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
             rewardRate = (_amount + remainingRewards) / _duration;
         }
-        require(rewardRate > 0, "reward rate = 0");
+        require(rewardRate > 0, "StakingRewards::ZERO_REWARD_RATE");
         rewardsToken.transferFrom(msg.sender, address(this), _amount);
         require(
             _amount <= rewardsToken.balanceOf(address(this)),
-            "reward amount > balance"
+            "StakingRewards::NOT_ENOUGH_REWARDS"
         );
 
         finishAt = block.timestamp + _duration;
@@ -197,7 +197,7 @@ contract StakingRewards is Ownable {
     ) public view returns (uint256) {
         require(
             timestamp < block.timestamp,
-            "Comp::getPriorVotes: not yet determined"
+            "StakingRewards::INVALID_TIMESTAMP"
         );
 
         uint256 nCheckpoints = numCheckpoints[account];
