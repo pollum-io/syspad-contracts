@@ -89,7 +89,7 @@ contract StakingRewards is Ownable {
      * If the current block timestamp is before the start of the first reward period, it returns the start of the first reward period.
      */
     function lastTimeRewardApplicable() public view returns (uint256) {
-        return finishAt <= clock() ? finishAt : clock();
+        return finishAt <= block.timestamp ? finishAt : block.timestamp;
     }
 
     /**
@@ -167,10 +167,10 @@ contract StakingRewards is Ownable {
         uint256 _amount,
         uint256 _duration
     ) external onlyOwner updateReward(address(0)) {
-        if (clock() >= finishAt) {
+        if (block.timestamp >= finishAt) {
             rewardRate = _amount / _duration;
         } else {
-            uint remainingRewards = (finishAt - clock()) * rewardRate;
+            uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
             rewardRate = (_amount + remainingRewards) / _duration;
         }
         require(rewardRate > 0, "reward rate = 0");
@@ -180,16 +180,8 @@ contract StakingRewards is Ownable {
             "reward amount > balance"
         );
 
-        finishAt = clock() + _duration;
-        updatedAt = clock();
-    }
-
-    /**
-     * @dev Returns the current block timestamp as a `uint256`.
-     * @return The current block timestamp.
-     */
-    function clock() public view returns (uint256) {
-        return block.timestamp;
+        finishAt = block.timestamp + _duration;
+        updatedAt = block.timestamp;
     }
 
     /**
@@ -203,7 +195,10 @@ contract StakingRewards is Ownable {
         address account,
         uint256 timestamp
     ) public view returns (uint256) {
-        require(timestamp < clock(), "Comp::getPriorVotes: not yet determined");
+        require(
+            timestamp < block.timestamp,
+            "Comp::getPriorVotes: not yet determined"
+        );
 
         uint256 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -211,12 +206,12 @@ contract StakingRewards is Ownable {
         }
 
         // First check most recent balance
-        if (checkpoints[account][nCheckpoints - 1].timestamp <= clock()) {
+        if (checkpoints[account][nCheckpoints - 1].timestamp <= timestamp) {
             return checkpoints[account][nCheckpoints - 1].balance;
         }
 
         // Next check implicit zero balance
-        if (checkpoints[account][0].timestamp > clock()) {
+        if (checkpoints[account][0].timestamp > timestamp) {
             return 0;
         }
 
@@ -225,9 +220,9 @@ contract StakingRewards is Ownable {
         while (upper > lower) {
             uint256 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
             Checkpoint memory cp = checkpoints[account][center];
-            if (cp.timestamp == clock()) {
+            if (cp.timestamp == timestamp) {
                 return cp.balance;
-            } else if (cp.timestamp < clock()) {
+            } else if (cp.timestamp < timestamp) {
                 lower = center;
             } else {
                 upper = center - 1;
@@ -246,7 +241,8 @@ contract StakingRewards is Ownable {
             : 0;
         if (
             nCheckpoints > 0 &&
-            checkpoints[_msgSender()][nCheckpoints - 1].timestamp == clock()
+            checkpoints[_msgSender()][nCheckpoints - 1].timestamp ==
+            block.timestamp
         ) {
             checkpoints[_msgSender()][nCheckpoints - 1].balance = op(
                 oldBalance,
@@ -254,7 +250,7 @@ contract StakingRewards is Ownable {
             );
         } else {
             checkpoints[_msgSender()][nCheckpoints] = Checkpoint(
-                clock(),
+                block.timestamp,
                 op(oldBalance, delta)
             );
             numCheckpoints[_msgSender()] = nCheckpoints + 1;
