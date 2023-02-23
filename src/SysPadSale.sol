@@ -37,7 +37,7 @@ contract SysPadSale is Pausable, Ownable {
     uint256 public releaseEndTime;
 
     // Amount of token raised in wei
-    uint256 public raise;
+    uint256 public usdRaised;
 
     // Amount of tokens sold
     uint256 public tokenSold;
@@ -46,7 +46,7 @@ contract SysPadSale is Pausable, Ownable {
     uint256 public tokenClaimed;
 
     // Amount of tokens to sold out
-    uint256 public raiseAmount;
+    uint256 public saleAmount;
 
     // Ether to token conversion rate
     uint256 public usdConversionRate;
@@ -78,7 +78,7 @@ contract SysPadSale is Pausable, Ownable {
         uint256 releaseTime,
         uint256 releaseEndTime,
         uint256 usdConversionRate,
-        uint256 raiseAmount
+        uint256 saleAmount
     );
     event TokenPurchase(
         address indexed purchaser,
@@ -105,7 +105,7 @@ contract SysPadSale is Pausable, Ownable {
      * @param _openTime Timestamp of when SysPad Sale starts.
      * @param _releaseTime Timestamp of when SysPadd Slae claim period starts.
      * @param _usdConversionRate Conversion rate for buy token.
-     * @param _raiseAmount Amount of tokens to sold out.
+     * @param _saleAmount Amount of tokens to sold out.
      * @param _fundingWallet Address where collected funds will be forwarded to.
      */
     constructor(
@@ -115,7 +115,7 @@ contract SysPadSale is Pausable, Ownable {
         uint256 _releaseTime,
         uint256 _releaseDuration,
         uint256 _usdConversionRate,
-        uint256 _raiseAmount,
+        uint256 _saleAmount,
         address _fundingWallet
     ) {
         factory = ISysPad(_msgSender());
@@ -125,7 +125,7 @@ contract SysPadSale is Pausable, Ownable {
         releaseTime = _releaseTime;
         releaseEndTime = _releaseTime + _releaseDuration;
         usdConversionRate = _usdConversionRate;
-        raiseAmount = _raiseAmount;
+        saleAmount = _saleAmount;
         fundingWallet = _fundingWallet;
 
         emit CampaignCreated(
@@ -135,7 +135,7 @@ contract SysPadSale is Pausable, Ownable {
             releaseTime,
             releaseEndTime,
             usdConversionRate,
-            raiseAmount
+            saleAmount
         );
     }
 
@@ -165,7 +165,7 @@ contract SysPadSale is Pausable, Ownable {
         view
         returns (uint256 availableTokens)
     {
-        availableTokens = raiseAmount - tokenSold;
+        availableTokens = saleAmount - tokenSold;
     }
 
     /**
@@ -222,7 +222,7 @@ contract SysPadSale is Pausable, Ownable {
      * @dev User can purchase / trade tokens when isOpen == true
      * @return open true if the Sale is open.
      */
-    function isOpen() external view returns (bool open) {
+    function isOpen() public view returns (bool open) {
         open =
             (block.timestamp <= closeTime) &&
             (block.timestamp >= openTime) &&
@@ -246,10 +246,7 @@ contract SysPadSale is Pausable, Ownable {
         require(!factory.paused(), "SysPadSale::PAUSED");
         require(_amount > 0, "SysPadSale::INVALID_AMOUNT");
         require(isLoaded, "SysPadSale::NOT_LOADED");
-        require(
-            block.timestamp >= openTime && block.timestamp <= closeTime,
-            "SysPadSale::PURCHASE_NOT_ALLOWED"
-        );
+        require(isOpen(), "SysPadSale::PURCHASE_NOT_ALLOWED");
 
         // calculate token amount to be sold
         uint256 _tokenAmount = (_amount * usdConversionRate) / 1e6;
@@ -265,7 +262,7 @@ contract SysPadSale is Pausable, Ownable {
 
         _token.safeTransferFrom(_msgSender(), address(this), _amount);
 
-        raiseAmount += _amount;
+        usdRaised += _amount;
         tokenSold += _tokenAmount;
         userTokensMapping[_msgSender()].tokensBought += _tokenAmount;
 
@@ -293,7 +290,7 @@ contract SysPadSale is Pausable, Ownable {
     }
 
     /**
-     * @notice Check the amount of tokens is bigger than raiseAmount and enable to buy
+     * @notice Check the amount of tokens is bigger than saleAmount and enable to buy
      */
     function loadSale() external onlyOwner {
         require(!isLoaded, "SysPadSale::LOAD_ALREADY_VERIFIED");
@@ -302,9 +299,9 @@ contract SysPadSale is Pausable, Ownable {
             "SysPadSale::CAMPAIGN_ALREADY_STARTED"
         );
 
-        token.safeTransferFrom(_msgSender(), address(this), raiseAmount);
+        token.safeTransferFrom(_msgSender(), address(this), saleAmount);
         isLoaded = true;
-        emit SaleLoaded(raiseAmount);
+        emit SaleLoaded(saleAmount);
     }
 
     /**

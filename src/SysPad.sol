@@ -100,7 +100,7 @@ contract SysPad is TierSystem, Pausable {
      * @param _openTime Number of SysPad Sale start time in seconds
      * @param _releaseTime Timestamp when starts the claim distribution period
      * @param _usdConversionRate Conversion rate for buy token. tokens = value * rate
-     * @param _raiseAmount Amount of tokens to sold out
+     * @param _saleAmount Amount of tokens to sold out
      * @param _fundingWallet Address of wallet to receive the funds
      */
     function registerSale(
@@ -110,7 +110,7 @@ contract SysPad is TierSystem, Pausable {
         uint256 _releaseTime,
         uint256 _releaseDuration,
         uint256 _usdConversionRate,
-        uint256 _raiseAmount,
+        uint256 _saleAmount,
         address _fundingWallet
     ) external onlyOwner whenNotPaused returns (address sale) {
         require(_token != address(0), "SysPad::ZERO_ADDRESS");
@@ -122,7 +122,7 @@ contract SysPad is TierSystem, Pausable {
             _openTime + _duration < _releaseTime,
             "SysPad::INVALID_RELEASE_START_TIME"
         );
-        require(_raiseAmount > 0, "SysPad::INVALID_RAISE_AMOUNT");
+        require(_saleAmount > 0, "SysPad::INVALID_RAISE_AMOUNT");
         require(_fundingWallet != address(0), "SysPad::ZERO_ADDRESS");
 
         sale = address(
@@ -133,7 +133,7 @@ contract SysPad is TierSystem, Pausable {
                 _releaseTime,
                 _releaseDuration,
                 _usdConversionRate,
-                _raiseAmount,
+                _saleAmount,
                 _fundingWallet
             )
         );
