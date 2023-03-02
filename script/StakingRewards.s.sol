@@ -11,7 +11,7 @@ contract Deploy is Script {
 
         // address _stakingToken, address _rewardToken
 
-        new DZooStaking(
+        new StakingRewards(
             address(),
             address()
         );
