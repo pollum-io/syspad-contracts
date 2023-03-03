@@ -12,8 +12,8 @@ contract Deploy is Script {
         // address _stakingToken, address _rewardToken
 
         new StakingRewards(
-            address(),
-            address()
+            address(0),
+            address(1)
         );
 
         vm.stopBroadcast();

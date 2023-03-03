@@ -13,13 +13,13 @@ contract Deploy is Script {
         //Constructor Parameters 
         // uint _platformFee, address _feeAddress, IStakingRewards _stakingRewards, 
         // address _usdc, address _usdt
-        new SysPad(
-            uint256 _platformFee,
-            address _feeAddress,
-            IStakingRewards _stakingRewards,
-            address _usdc,
-            address _usdt
-        );
+        // new SysPad (
+        //     uint256 _platformFee,
+        //     address _feeAddress,
+        //     IStakingRewards _stakingRewards,
+        //     address _usdc,
+        //     address _usdt
+        // );
 
         vm.stopBroadcast();
     }
