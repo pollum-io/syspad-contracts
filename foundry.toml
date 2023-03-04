@@ -1,2 +1,10 @@
 [profile.ci.fuzz]
 runs = 10_000
+
+[profile.default]
+fs_permissions = [{ access = "read", path = "./.env"}]
+
+[rpc_endpoints]
+goerli = "${API_KEY_ALCHEMY}"
+
+

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "../src/TierSystem.sol";
-import "./interfaces/IStakingRewards.sol";
+//import "./interfaces/IStakingRewards.sol";
 
 contract Deploy is Script {
     function run() external {
@@ -14,9 +14,9 @@ contract Deploy is Script {
      * (IStakingRewards _stakingRewards)
      */
 
-        new TierSystem(
-            IStakingRewards _stakingRewards
-        );
+        // new TierSystem(
+        //     IStakingRewards _stakingRewards
+        // );
 
         vm.stopBroadcast();
     }

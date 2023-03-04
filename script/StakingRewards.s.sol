@@ -10,7 +10,7 @@ contract Deploy is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // address _stakingToken, address _rewardToken
-
+        
         new StakingRewards(
             address(0),
             address(1)

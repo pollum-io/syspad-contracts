@@ -20,16 +20,16 @@ contract Deploy is Script {
      * @param _fundingWallet Address where collected funds will be forwarded to.
      */
 
-        new SysPadSale(
-            IERC20 _token,
-            uint256 _duration,
-            uint256 _openTime,
-            uint256 _releaseTime,
-            uint256 _releaseDuration,
-            uint256 _usdConversionRate,
-            uint256 _saleAmount,
-            address _fundingWallet
-        );
+        // new SysPadSale(
+        //     IERC20 _token,
+        //     uint256 _duration,
+        //     uint256 _openTime,
+        //     uint256 _releaseTime,
+        //     uint256 _releaseDuration,
+        //     uint256 _usdConversionRate,
+        //     uint256 _saleAmount,
+        //     address _fundingWallet
+        // );
 
         vm.stopBroadcast();
     }
