@@ -10,14 +10,18 @@ contract Deploy is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        uint8 platformFee = 10;
+        address feeAddress = address(89);
         IStakingRewards stakingRewards;
+        address usdc = address(90);
+        address usdt = address(91);
 
         new SysPad(
-            19,
-            address(89),
+            platformFee,
+            feeAddress,
             stakingRewards,
-            address(90),
-            address(91)
+            usdc,
+            usdt
         );
 
         vm.stopBroadcast();
