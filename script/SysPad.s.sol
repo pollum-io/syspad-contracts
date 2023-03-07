@@ -10,16 +10,15 @@ contract Deploy is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // Constructor Parameters 
-        // uint _platformFee, address _feeAddress, IStakingRewards _stakingRewards, 
-        // address _usdc, address _usdt
-        // new SysPad (
-        //     uint256 _platformFee,
-        //     address _feeAddress,
-        //     IStakingRewards _stakingRewards,
-        //     address _usdc,
-        //     address _usdt
-        // );
+        IStakingRewards stakingRewards;
+
+        new SysPad(
+            19,
+            address(89),
+            stakingRewards,
+            address(90),
+            address(91)
+        );
 
         vm.stopBroadcast();
     }
