@@ -46,17 +46,17 @@ contract SysPadSale is Pausable, Ownable {
     uint256 public tokenClaimed;
 
     // Amount of tokens to sold out
-    uint256 public saleAmount;
+    uint256 public saleAmountToken;
 
-    // Ether to token conversion rate
-    uint256 public usdConversionRate;
+    // Amount of token to be raised in usd (1e6)
+    uint256 public saleAmountUsd;
 
     bool public isLoaded;
-
-    uint256 public maxBuyTier4 = 50000 * 1e18;
-    uint256 public maxBuyTier3 = 10000 * 1e18;
-    uint256 public maxBuyTier2 = 1500 * 1e18;
-    uint256 public maxBuyTier1 = 350 * 1e18;
+    // Max amout of dollars of each tier
+    uint256 public maxBuyTier4 = 2500 * 1e6;
+    uint256 public maxBuyTier3 = 1000 * 1e6;
+    uint256 public maxBuyTier2 = 500 * 1e6;
+    uint256 public maxBuyTier1 = 200 * 1e6;
 
     // User struct to store user operations
     struct UserControl {
@@ -104,8 +104,8 @@ contract SysPadSale is Pausable, Ownable {
      * @param _duration Number of SysPad Sale duration time.
      * @param _openTime Timestamp of when SysPad Sale starts.
      * @param _releaseTime Timestamp of when SysPadd Slae claim period starts.
-     * @param _usdConversionRate Conversion rate for buy token.
-     * @param _saleAmount Amount of tokens to sold out.
+     * @param _saleAmountUsd Amount of token to be raised in usd (1e6).
+     * @param _saleAmountToken Amount of token to be raised in token (1eDecimals).
      * @param _fundingWallet Address where collected funds will be forwarded to.
      */
     constructor(
@@ -114,8 +114,8 @@ contract SysPadSale is Pausable, Ownable {
         uint256 _openTime,
         uint256 _releaseTime,
         uint256 _releaseDuration,
-        uint256 _usdConversionRate,
-        uint256 _saleAmount,
+        uint256 _saleAmountUsd,
+        uint256 _saleAmountToken,
         address _fundingWallet
     ) {
         factory = ISysPad(_msgSender());
@@ -124,8 +124,8 @@ contract SysPadSale is Pausable, Ownable {
         closeTime = _openTime + _duration;
         releaseTime = _releaseTime;
         releaseEndTime = _releaseTime + _releaseDuration;
-        usdConversionRate = _usdConversionRate;
-        saleAmount = _saleAmount;
+        saleAmountUsd = _saleAmountUsd;
+        saleAmountToken = _saleAmountToken;
         fundingWallet = _fundingWallet;
 
         emit CampaignCreated(
@@ -134,8 +134,8 @@ contract SysPadSale is Pausable, Ownable {
             closeTime,
             releaseTime,
             releaseEndTime,
-            usdConversionRate,
-            saleAmount
+            saleAmountUsd,
+            saleAmountToken
         );
     }
 
@@ -152,8 +152,19 @@ contract SysPadSale is Pausable, Ownable {
         address _address
     ) public view returns (uint256 buyableTokens) {
         buyableTokens =
-            maxBuyAmount(_address) -
+            calculateTokenAmount(maxBuyAmountUsd(_address)) -
             userTokensMapping[_address].tokensBought;
+    }
+
+    /**
+     * @notice calculate the conversion rate of the token
+     * @return tokenAmount Returns the amount of tokens
+     * @param usdcAmount Amount of usd to calculate the amount of tokens
+     */
+    function calculateTokenAmount(
+        uint256 usdcAmount
+    ) public view returns (uint256 tokenAmount) {
+        tokenAmount = (usdcAmount * saleAmountToken) / saleAmountUsd;
     }
 
     /**
@@ -165,7 +176,7 @@ contract SysPadSale is Pausable, Ownable {
         view
         returns (uint256 availableTokens)
     {
-        availableTokens = saleAmount - tokenSold;
+        availableTokens = saleAmountToken - tokenSold;
     }
 
     /**
@@ -175,9 +186,20 @@ contract SysPadSale is Pausable, Ownable {
      */
     function getClaimableTokens(
         address _address
-    ) public view returns (uint256 claimableTokens) {
+    ) external view returns (uint256 claimableTokens) {
         UserControl memory user = userTokensMapping[_address];
         claimableTokens = user.tokensBought - user.tokensClaimed;
+    }
+
+    /**
+     * @notice Returns the Bought tokens of an address
+     * @return boughtTokens Returns amount of tokens the user bought
+     * @param _address Address to find the amount of tokens
+     */
+    function getBoughtTokens(
+        address _address
+    ) external view returns (uint256 boughtTokens) {
+        boughtTokens = userTokensMapping[_address].tokensBought;
     }
 
     /**
@@ -244,12 +266,12 @@ contract SysPadSale is Pausable, Ownable {
             "SysPadSale::INVALID_TOKEN"
         );
         require(!factory.paused(), "SysPadSale::PAUSED");
-        require(_amount > 0, "SysPadSale::INVALID_AMOUNT");
+        require(_amount > 1e6, "SysPadSale::INVALID_AMOUNT");
         require(isLoaded, "SysPadSale::NOT_LOADED");
         require(isOpen(), "SysPadSale::PURCHASE_NOT_ALLOWED");
 
         // calculate token amount to be sold
-        uint256 _tokenAmount = (_amount * usdConversionRate) / 1e6;
+        uint256 _tokenAmount = calculateTokenAmount(_amount);
 
         require(
             _tokenAmount <= getBuyableTokens(_msgSender()),
@@ -298,10 +320,15 @@ contract SysPadSale is Pausable, Ownable {
             block.timestamp < openTime,
             "SysPadSale::CAMPAIGN_ALREADY_STARTED"
         );
+        require(
+            token.balanceOf(_msgSender()) >= saleAmountToken &&
+                token.allowance(_msgSender(), address(this)) >= saleAmountToken,
+            "SysPadSale::NOT_ENOUGH_TOKENS"
+        );
 
-        token.safeTransferFrom(_msgSender(), address(this), saleAmount);
+        token.safeTransferFrom(_msgSender(), address(this), saleAmountToken);
         isLoaded = true;
-        emit SaleLoaded(saleAmount);
+        emit SaleLoaded(saleAmountToken);
     }
 
     /**
@@ -318,14 +345,15 @@ contract SysPadSale is Pausable, Ownable {
     }
 
     /**
-     * @notice Owner can set the eth conversion rate.
-     * @param _rate Fixed number of ether rate
+     * @notice Owner can set the conversion rate.
+     * @param _newAmount New amount of usd to be raised
      */
-    function setUsdConversionRate(uint256 _rate) external onlyOwner {
-        require(usdConversionRate != _rate, "SysPadSale::RATE_INVALID");
-        require(_rate > 1e6, "SysPadSale::RATE_INVALID");
-        usdConversionRate = _rate;
-        emit UsdConversionRateChanged(_rate);
+    function setSaleAmountUsd(uint256 _newAmount) external onlyOwner {
+        require(saleAmountUsd != _newAmount, "SysPadSale::RATE_INVALID");
+        require(!isClaimable(), "SysPadSale::SALE_ENDED");
+
+        saleAmountUsd = _newAmount;
+        emit UsdConversionRateChanged(_newAmount);
     }
 
     /**
@@ -334,6 +362,7 @@ contract SysPadSale is Pausable, Ownable {
      */
     function setFundingWallet(address _address) external onlyOwner {
         require(_address != address(0), "SysPadSale::ZERO_ADDRESS");
+        require(!isClaimable(), "SysPadSale::SALE_ENDED");
         require(
             fundingWallet != _address,
             "SysPadSale::FUNDING_WALLET_INVALID"
@@ -356,9 +385,10 @@ contract SysPadSale is Pausable, Ownable {
     ) external onlyOwner {
         require(_openTime >= block.timestamp, "SysPadSale::INVALID_OPEN_TIME");
         require(
-            _openTime + _duration < _releaseTime,
+            _openTime + _duration <= _releaseTime,
             "SysPadSale::INVALID_RELEASE_TIME"
         );
+        require(!isClaimable(), "SysPadSale::SALE_ENDED");
 
         openTime = _openTime;
         closeTime = _openTime + _duration;
@@ -388,7 +418,7 @@ contract SysPadSale is Pausable, Ownable {
         _unpause();
     }
 
-    function maxBuyAmount(address _address) public view returns (uint256) {
+    function maxBuyAmountUsd(address _address) public view returns (uint256) {
         uint256 tier = factory.getTierAt(_address, openTime);
         if (tier == 4) {
             return maxBuyTier4;

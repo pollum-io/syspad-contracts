@@ -74,7 +74,7 @@ contract StakingRewards is Ownable {
      */
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
-        updatedAt = lastTimeRewardApplicable();
+        updatedAt = _lastTimeRewardApplicable();
 
         if (_account != address(0)) {
             rewards[_account] = earned(_account);
@@ -88,7 +88,7 @@ contract StakingRewards is Ownable {
      * @dev Returns the timestamp at which the next reward period starts.
      * If the current block timestamp is before the start of the first reward period, it returns the start of the first reward period.
      */
-    function lastTimeRewardApplicable() public view returns (uint256) {
+    function _lastTimeRewardApplicable() internal view returns (uint256) {
         return finishAt <= block.timestamp ? finishAt : block.timestamp;
     }
 
@@ -102,7 +102,7 @@ contract StakingRewards is Ownable {
 
         return
             rewardPerTokenStored +
-            (rewardRate * (lastTimeRewardApplicable() - updatedAt) * 1e18) /
+            (rewardRate * (_lastTimeRewardApplicable() - updatedAt) * 1e18) /
             totalSupply;
     }
 
@@ -110,10 +110,10 @@ contract StakingRewards is Ownable {
      * @dev Stakes a specified amount of tokens and updates the amount of tokens staked by the sender.
      * @param _amount The amount of tokens to stake.
      */
-    function stake(uint256 _amount) external updateReward(msg.sender) {
+    function stake(uint256 _amount) external updateReward(_msgSender()) {
         require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
-        stakingToken.transferFrom(msg.sender, address(this), _amount);
-        balanceOf[msg.sender] += _amount;
+        stakingToken.transferFrom(_msgSender(), address(this), _amount);
+        balanceOf[_msgSender()] += _amount;
         totalSupply += _amount;
         _writeCheckpoint(_add, _amount);
     }
@@ -122,11 +122,11 @@ contract StakingRewards is Ownable {
      * @dev Withdraws a specified amount of tokens and updates the amount of tokens staked by the sender.
      * @param _amount The amount of tokens to withdraw.
      */
-    function withdraw(uint256 _amount) external updateReward(msg.sender) {
+    function withdraw(uint256 _amount) external updateReward(_msgSender()) {
         require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
-        balanceOf[msg.sender] -= _amount;
+        balanceOf[_msgSender()] -= _amount;
         totalSupply -= _amount;
-        stakingToken.transfer(msg.sender, _amount);
+        stakingToken.transfer(_msgSender(), _amount);
         _writeCheckpoint(_subtract, _amount);
     }
 
@@ -145,11 +145,11 @@ contract StakingRewards is Ownable {
     /**
      * @dev Calculates and transfers the appropriate amount of reward tokens to the sender and updates the reward rate and the timestamp at which the next reward period starts.
      */
-    function getReward() external updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
+    function getReward() external updateReward(_msgSender()) {
+        uint256 reward = rewards[_msgSender()];
         if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardsToken.transfer(msg.sender, reward);
+            rewards[_msgSender()] = 0;
+            rewardsToken.transfer(_msgSender(), reward);
         }
     }
 
@@ -174,7 +174,7 @@ contract StakingRewards is Ownable {
             rewardRate = (_amount + remainingRewards) / _duration;
         }
         require(rewardRate > 0, "StakingRewards::ZERO_REWARD_RATE");
-        rewardsToken.transferFrom(msg.sender, address(this), _amount);
+        rewardsToken.transferFrom(_msgSender(), address(this), _amount);
         require(
             _amount <= rewardsToken.balanceOf(address(this)),
             "StakingRewards::NOT_ENOUGH_REWARDS"
