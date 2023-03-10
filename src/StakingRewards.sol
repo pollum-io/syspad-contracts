@@ -35,6 +35,10 @@ contract StakingRewards is Ownable {
      */
     uint256 public rewardPerTokenStored;
     /**
+     * @notice The last duration of the rewards.
+     */
+    uint256 public lastDuration;
+    /**
      * @notice A mapping from a user's address to the last recorded rewardPerTokenStored.
      */
     mapping(address => uint256) public userRewardPerTokenPaid;
@@ -179,9 +183,22 @@ contract StakingRewards is Ownable {
             _amount <= rewardsToken.balanceOf(address(this)),
             "StakingRewards::NOT_ENOUGH_REWARDS"
         );
+        lastDuration = _duration;
 
         finishAt = block.timestamp + _duration;
         updatedAt = block.timestamp;
+    }
+
+    /**
+     * @notice Returns the current Annual percentage rate in Basis Point.
+     * @return _apr The current Annual percentage rate.
+     */
+    function apr() external view returns (uint256 _apr) {
+        require(rewardRate > 0, "StakingRewards::REWARD_RATE_IS_ZERO");
+        require(block.timestamp < finishAt, "StakingRewards::REWARD_IS_OVER");
+        uint256 rewardPerYear = rewardRate * 365 days;
+        uint256 totalStaked = totalSupply;
+        _apr = (rewardPerYear * 1e4) / totalStaked;
     }
 
     /**
