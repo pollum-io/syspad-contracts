@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/token/ERC20/IERC20.sol";
+import "./interfaces/ISysPadToken.sol";
 import "@openzeppelin/access/Ownable.sol";
 import "@openzeppelin/utils/math/Math.sol";
 
@@ -14,8 +14,8 @@ The amount of rewards a user receives is proportional to the amount staked and t
 This contract is inspired by the StakingRewards contract from Synthetix.
 */
 contract StakingRewards is Ownable {
-    IERC20 public immutable stakingToken;
-    IERC20 public immutable rewardsToken;
+    ISysPadToken public immutable stakingToken;
+    ISysPadToken public immutable rewardsToken;
 
     /**
      * @notice The timestamp when the rewards finish.
@@ -67,8 +67,8 @@ contract StakingRewards is Ownable {
     mapping(address => uint256) public numCheckpoints;
 
     constructor(address _stakingToken, address _rewardToken) {
-        stakingToken = IERC20(_stakingToken);
-        rewardsToken = IERC20(_rewardToken);
+        stakingToken = ISysPadToken(_stakingToken);
+        rewardsToken = ISysPadToken(_rewardToken);
     }
 
     /**
@@ -115,6 +115,29 @@ contract StakingRewards is Ownable {
      */
     function stake(uint256 _amount) external updateReward(_msgSender()) {
         require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
+        stakingToken.transferFrom(_msgSender(), address(this), _amount);
+        balanceOf[_msgSender()] += _amount;
+        totalSupply += _amount;
+        _writeCheckpoint(_add, _amount);
+    }
+
+    function stakePermit(
+        uint256 _amount,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external updateReward(_msgSender()) {
+        require(_amount > 0, "StakingRewards::ZERO_AMOUNT");
+        stakingToken.permit(
+            _msgSender(),
+            address(this),
+            _amount,
+            _deadline,
+            _v,
+            _r,
+            _s
+        );
         stakingToken.transferFrom(_msgSender(), address(this), _amount);
         balanceOf[_msgSender()] += _amount;
         totalSupply += _amount;
