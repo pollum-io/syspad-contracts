@@ -3,12 +3,11 @@ pragma solidity ^0.8.0;
 
 import "./TierSystem.sol";
 import "@openzeppelin/security/Pausable.sol";
-
 import "./SysPadSale.sol";
 
 contract SysPad is TierSystem, Pausable {
     // Percentage of platform fee
-    uint256 public platformFee;
+    uint8 public platformFee;
 
     // Address of platform fee. Platform fee will be transfer to it
     address public platformFeeAddress;
@@ -28,11 +27,11 @@ contract SysPad is TierSystem, Pausable {
         address indexed sale,
         uint256 saleId
     );
-    event PlatformFeeChanged(uint256 fee);
+    event PlatformFeeChanged(uint8 fee);
     event PlatformFeeAddressChanged(address newFeeAddress);
 
     constructor(
-        uint256 _platformFee,
+        uint8 _platformFee,
         address _feeAddress,
         IStakingRewards _stakingRewards,
         address _usdc,
@@ -73,7 +72,7 @@ contract SysPad is TierSystem, Pausable {
      * @dev Sale will call function for distribute platform fee
      * @param _fee new fee percentage number
      */
-    function setPlatformFee(uint256 _fee) external onlyOwner {
+    function setPlatformFee(uint8 _fee) external onlyOwner {
         require(_fee >= 0 && _fee < 100, "SysPad::OVERFLOW_FEE");
         platformFee = _fee;
 
