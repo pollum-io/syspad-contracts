@@ -23,11 +23,7 @@ contract SysPad is TierSystem, Pausable {
     // Mapping from token to array of sale address.
     mapping(address => address[]) public getSalesByToken;
 
-    event SaleCreated(
-        address indexed token,
-        address indexed sale,
-        uint256 saleId
-    );
+    event SaleCreated(address token, address sale, uint256 saleId);
     event PlatformFeeChanged(uint256 fee);
     event PlatformFeeAddressChanged(address newFeeAddress);
 
