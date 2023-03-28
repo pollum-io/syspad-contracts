@@ -71,7 +71,8 @@ contract SysPadSale is Pausable, Ownable {
     // EVENTS
     // -----------------------------------------
 
-    event CampaignCreated(
+    event SaleCreated(
+        address saleAddress,
         address token,
         uint256 openTime,
         uint256 closeTime,
@@ -128,7 +129,8 @@ contract SysPadSale is Pausable, Ownable {
         saleAmountToken = _saleAmountToken;
         fundingWallet = _fundingWallet;
 
-        emit CampaignCreated(
+        emit SaleCreated(
+            address(this),
             address(token),
             openTime,
             closeTime,
@@ -168,8 +170,8 @@ contract SysPadSale is Pausable, Ownable {
     }
 
     /**
-     * @notice Returns the available tokens of Campaign
-     * @return availableTokens Returns amount of tokens available to buy in the Campaign
+     * @notice Returns the available tokens of Sale
+     * @return availableTokens Returns amount of tokens available to buy in the Sale
      */
     function getAvailableTokens()
         public
@@ -231,7 +233,7 @@ contract SysPadSale is Pausable, Ownable {
     }
 
     /**
-     * @notice Return true if campaign has ended and is eneable to claim
+     * @notice Return true if sale has ended and is eneable to claim
      * @dev User cannot claim tokens when isClaimable == false
      * @return claimable true if the release time < now.
      */
@@ -240,7 +242,7 @@ contract SysPadSale is Pausable, Ownable {
     }
 
     /**
-     * @notice Return true if campaign is open
+     * @notice Return true if sale is open
      * @dev User can purchase / trade tokens when isOpen == true
      * @return open true if the Sale is open.
      */
@@ -316,10 +318,7 @@ contract SysPadSale is Pausable, Ownable {
      */
     function loadSale() external onlyOwner {
         require(!isLoaded, "SysPadSale::LOAD_ALREADY_VERIFIED");
-        require(
-            block.timestamp < openTime,
-            "SysPadSale::CAMPAIGN_ALREADY_STARTED"
-        );
+        require(block.timestamp < openTime, "SysPadSale::SALE_ALREADY_STARTED");
         require(
             token.balanceOf(_msgSender()) >= saleAmountToken &&
                 token.allowance(_msgSender(), address(this)) >= saleAmountToken,
